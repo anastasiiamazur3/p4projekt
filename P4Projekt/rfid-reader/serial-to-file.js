@@ -1,4 +1,43 @@
-const { SerialPort } = require("serialport");
+require("dotenv").config();
+const { SerialPort } = require("@serialport/stream");
+const { ReadlineParser } = require("@serialport/parser-readline");
+const Binding = require("@serialport/bindings-cpp");
+const fs = require("fs");
+
+// Pfad zur Textdatei
+const filePath = "serial-output.txt";
+
+// Seriellen Port aus Umgebungsvariablen lesen
+const portName = process.env.SERIAL_PORT;
+
+// Seriellen Port öffnen
+const port = new SerialPort({
+  path: "/dev/tty-usbserial1",
+  baudRate: 9600,
+  binding: Binding,
+});
+
+// Parser für die serielle Ausgabe
+const parser = port.pipe(new ReadlineParser({ delimiter: "\r\n" }));
+
+// Bei Daten vom seriellen Port
+parser.on("data", (data) => {
+  console.log(`Daten empfangen: ${data}`);
+
+  // In die Textdatei schreiben
+  fs.appendFile(filePath, data + "\n", (err) => {
+    if (err) {
+      console.error("Fehler beim Schreiben in die Datei:", err);
+    }
+  });
+});
+
+// Bei Fehlern
+parser.on("error", (err) => {
+  console.error("Fehler bei der seriellen Kommunikation:", err);
+});
+
+/*const { SerialPort } = require("serialport");
 const { ReadlineParser } = require("@serialport/parser-readline");
 const say = require("say");
 
